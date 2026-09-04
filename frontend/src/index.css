@@ -53,11 +53,19 @@
   }
 }
 
+@utility hour-grid {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 11px,
+    var(--border) 11px 12px
+  );
+}
+
+
 #root {
-  width: 1126px;
-  max-width: 100%;
+  width: 90%;
   margin: 0 auto;
-  text-align: center;
+  /* text-align: center; */
   border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;

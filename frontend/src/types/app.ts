@@ -4,5 +4,6 @@ export default interface Task {
   title: string
   completed: boolean
   created_at: string
-  due_on?: string
+  due_on: string
+  time_due: string
 }
