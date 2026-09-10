@@ -19,7 +19,7 @@ async def list_tasks(session: AsyncSession = Depends(get_session)):
 
 @router.post("", response_model=TaskRead, status_code=201)
 async def create_task(payload: TaskCreate, session: AsyncSession = Depends(get_session)):
-    task = Task(title=payload.title, due_on=payload.due_on, time_due=payload.time_due)
+    task = Task(title=payload.title, end_at=payload.end_at, start_at=payload.start_at)
     session.add(task)
     await session.commit()
     await session.refresh(task)

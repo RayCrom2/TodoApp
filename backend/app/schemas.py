@@ -1,14 +1,13 @@
 import uuid
-from datetime import date, datetime, time
+from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 
 class TaskCreate(BaseModel):
     title: str
-    due_on: date = Field(default_factory=date.today)
-    time_due: time = Field(default_factory=lambda: time(23, 59, 59))
-
+    start_at: AwareDatetime | None = None
+    end_at: AwareDatetime
 
 class TaskUpdate(BaseModel):
     completed: bool
@@ -21,5 +20,6 @@ class TaskRead(BaseModel):
     title: str
     completed: bool
     created_at: datetime
-    due_on: date 
-    time_due: time
+    start_at: datetime | None = None
+    end_at: datetime
+    

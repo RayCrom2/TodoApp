@@ -1,25 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createTask, deleteTask, fetchTasks, updateTaskCompleted } from "./api";
 import type task from "./types/app";
 import DisplayTask from "./components/DisplayTask";
 import {
   startOfWeek,
   daysOfWeek,
-  calculate_percent,
   toLocalDateISO,
   timeIntervals,
+  minutesToPercent,
+  localMinutesOfDay,
+  toLocalDateTimeInput,
+  nextQuarterHour,
+  endOfToday,
 } from "./utils/date";
+import { toast } from "sonner";
 
 function App() {
   const [tasks, setTasks] = useState<task[]>([]);
+
   const [newTask, setNewTask] = useState<string>("");
+  // const DEFAULT_TIME_DUE = "23:59";
 
-  const DEFAULT_TIME_DUE = "23:59";
-
-  const [newDueOn, setNewDueOn] = useState<string>(() =>
-    toLocalDateISO(new Date()),
+  const [eventStartTime, setEventStartTime] = useState<string>(() =>
+    toLocalDateTimeInput(nextQuarterHour()),
   );
-  const [newTimeDue, setNewTimeDue] = useState<string>(DEFAULT_TIME_DUE);
+  const [eventEndTime, setEventEndTime] = useState<string>(() =>
+    toLocalDateTimeInput(endOfToday()),
+  );
 
   useEffect(() => {
     fetchTasks()
@@ -31,12 +38,16 @@ function App() {
     e.preventDefault();
     const title = newTask.trim();
     if (!title) return;
+    if (eventStartTime > eventEndTime) {
+      toast.error("Start time can not be later than End Time");
+      return;
+    }
     try {
-      const created = await createTask(title, newDueOn, newTimeDue);
+      const created = await createTask(title, eventStartTime, eventEndTime);
       setTasks([...tasks, created]);
       setNewTask("");
-      setNewDueOn(toLocalDateISO(new Date()));
-      setNewTimeDue(DEFAULT_TIME_DUE);
+      setEventStartTime(() => toLocalDateTimeInput(nextQuarterHour()));
+      setEventEndTime(() => toLocalDateTimeInput(endOfToday()));
     } catch (err) {
       console.error(err);
     }
@@ -78,17 +89,17 @@ function App() {
           placeholder="Add a new task"
         />
         <input
-          type="date"
-          value={newDueOn}
+          type="datetime-local"
+          value={eventStartTime}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setNewDueOn(e.target.value)
+            setEventStartTime(e.target.value)
           }
         />
         <input
-          type="time"
-          value={newTimeDue}
+          type="datetime-local"
+          value={eventEndTime}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setNewTimeDue(e.target.value)
+            setEventEndTime(e.target.value)
           }
         />
         <button type="submit">Add</button>
@@ -104,23 +115,64 @@ function App() {
           />
         ))}
       </ul> */}
-      <div key={3} className="relative hour-grid">
-        {Array.from({ length: 24 }, (_, index) => (
-          <div key={index} className="h-12 ml-0 flex flex-col "></div>
-        ))}
-        {tasks
-          .filter((t) => {
-            return t.due_on === toLocalDateISO(new Date());
-          })
-          .map((task) => (
+      <div className="flex gap-1">
+        <div>
+          {Array.from({ length: 24 }, (_, index) => (
             <div
-              key={task.id}
-              className="absolute pl-50"
-              style={{ top: `${calculate_percent(task.time_due)}%` }}
+              key={index}
+              className="h-[var(--hour-height)] text-right -translate-y-1/8"
             >
-              {task.title}
+              {index < 10 ? "0" + index.toString() : index}:00
             </div>
           ))}
+        </div>
+        <div className="relative hour-grid flex-1">
+          {Array.from({ length: 24 }, (_, index) => (
+            <div key={index} className="h-[var(--hour-height)] border-t" />
+          ))}
+          {tasks
+            .filter((t) => {
+              const startsToday =
+                t.start_at &&
+                toLocalDateISO(new Date(t.start_at)) ===
+                  toLocalDateISO(new Date());
+              const endsToday =
+                toLocalDateISO(new Date(t.end_at)) ===
+                toLocalDateISO(new Date());
+              return startsToday || endsToday;
+            })
+            .map((task) => {
+              const start = task.start_at ? new Date(task.start_at) : null;
+              const end = new Date(task.end_at);
+              const today = toLocalDateISO(new Date());
+              const startsToday =
+                task.start_at &&
+                toLocalDateISO(new Date(task.start_at)) === today;
+              const endsToday = toLocalDateISO(new Date(task.end_at)) === today;
+
+              const endMin = endsToday ? localMinutesOfDay(end) : 1440;
+              const startMin = start
+                ? startsToday
+                  ? localMinutesOfDay(start)
+                  : 0
+                : endMin;
+
+              return (
+                <div
+                  key={task.id}
+                  className="absolute border"
+                  style={{
+                    top: `${minutesToPercent(startMin)}%`,
+                    height: start
+                      ? `${minutesToPercent(endMin - startMin)}%`
+                      : "10px",
+                  }}
+                >
+                  {task.title}
+                </div>
+              );
+            })}
+        </div>
       </div>
     </>
   );

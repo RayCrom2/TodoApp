@@ -37,9 +37,7 @@ export default function DisplayTask({
         >
           <span aria-hidden="true">×</span>
         </button>
-        <span>
-          {task.due_on} - {task.time_due}
-        </span>
+        <span>{/* {task.date_due} - {task.time_due} */}</span>
       </h2>
     </li>
   );

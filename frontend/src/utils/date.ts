@@ -27,6 +27,17 @@ export function timeToMinutes(time: string): number {
   return Number(h) * 60 + Number(m);
 }
 
+// Minutes from midnight (or a duration in minutes) as a percentage of a day.
+// Works for both because a day is 1440 minutes either way.
+export function minutesToPercent(minutes: number): number {
+  return (minutes / 1440) * 100;
+}
+
+// Local wall-clock minutes from midnight for an instant.
+export function localMinutesOfDay(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes();
+}
+
 export const daysOfWeek: string[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 export const timeIntervals: number[] = [0, 15, 30, 45];
 
@@ -36,3 +47,22 @@ export const calculate_percent = (time: string) => {
   const [hours, minutes] = timeWithoutSeconds.split(":").map(Number);
   return ((hours * 60 + minutes) / 72) * 5;
 };
+
+export const endOfToday = () => {
+  const d = new Date();
+  d.setHours(23, 59, 0, 0);
+  return d;
+};
+
+export function toLocalDateTimeInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+       + `T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Next 15-minute mark, so a default start lands on a gridline.
+export function nextQuarterHour(): Date {
+  const d = new Date();
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+  return d;
+}
